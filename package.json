@@ -1,0 +1,13 @@
+{
+  "name": "us-stock-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Card style US index and China-listed ETF dashboard",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

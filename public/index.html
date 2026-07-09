@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>美股数据看板</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <main class="dashboard">
+        <header class="topbar">
+          <div>
+            <h1>美股数据看板</h1>
+            <p id="lastUpdated">等待数据</p>
+          </div>
+          <div class="top-actions">
+            <div id="marketPulse" class="pulse neutral">同步中</div>
+            <button id="refreshBtn" class="icon-button" type="button" title="刷新数据" aria-label="刷新数据">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 11a8 8 0 0 0-14.7-4.4L3 9m0 0V3m0 6h6M4 13a8 8 0 0 0 14.7 4.4L21 15m0 0v6m0-6h-6" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <section class="card-grid" aria-label="实时监控卡片">
+          <div id="metricCards" class="metric-grid"></div>
+        </section>
+
+        <section class="analysis-grid" aria-label="分析面板">
+          <article class="panel rebalance-panel">
+            <div class="panel-head">
+              <h2>调仓分析</h2>
+              <span id="valuationStatus" class="badge muted">估值同步中</span>
+            </div>
+            <div class="rebalance-body">
+              <div class="valuation-row highlight-row">
+                <div>
+                  <span class="label">纳指 PE</span>
+                  <strong id="peValue">--</strong>
+                  <small id="peMeta">--</small>
+                </div>
+                <div id="peState" class="state-pill muted">数据不足</div>
+              </div>
+              <div class="valuation-row">
+                <div>
+                  <span class="label">纳指 PEG</span>
+                  <strong id="pegValue">--</strong>
+                  <small id="pegMeta">--</small>
+                </div>
+                <div id="pegState" class="state-pill muted">数据不足</div>
+              </div>
+              <div class="drawdown-box">
+                <div>
+                  <span class="label">52周高点回撤</span>
+                  <strong id="drawdownValue">--</strong>
+                  <small id="drawdownMeta">--</small>
+                </div>
+                <div id="drawdownState" class="state-pill muted">--</div>
+              </div>
+            </div>
+          </article>
+
+          <div class="risk-stack">
+            <article class="panel vix-panel">
+              <div class="panel-head">
+                <h2>VIX</h2>
+                <span id="vixState" class="badge muted">--</span>
+              </div>
+              <div class="vix-body">
+                <div class="vix-reading">
+                  <div class="vix-value" id="vixValue">--</div>
+                  <div class="vix-meta">
+                    <span id="vixChange">--</span>
+                    <span id="vixTime">--</span>
+                  </div>
+                </div>
+                <div class="vix-scale">
+                  <div class="range-track">
+                    <span></span><span></span><span></span><span></span>
+                  </div>
+                  <div class="vix-levels">
+                    <span><b>&lt;20</b>平静</span>
+                    <span><b>20-30</b>紧张</span>
+                    <span><b>30-40</b>恐慌</span>
+                    <span><b>&gt;40</b>极度恐慌</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel execution-panel">
+              <div class="panel-head">
+                <h2>执行提示</h2>
+              </div>
+              <table class="execution-table">
+                <thead>
+                  <tr>
+                    <th>PE</th>
+                    <th>回撤</th>
+                    <th>VIX</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>贵</td><td>小</td><td>低</td><td>保持70/30</td></tr>
+                  <tr><td>贵</td><td>大</td><td>高</td><td>观察，不急于提高纳指</td></tr>
+                  <tr><td>正常</td><td>&gt;15%</td><td>&gt;20</td><td>提高到65/35</td></tr>
+                  <tr><td>偏低</td><td>&gt;20%</td><td>&gt;25</td><td>提高到60/40</td></tr>
+                  <tr><td>很低</td><td>&gt;30%</td><td>&gt;30</td><td>提高到50/50</td></tr>
+                </tbody>
+              </table>
+            </article>
+          </div>
+
+          <article class="panel limits-panel">
+            <div class="panel-head">
+              <h2>场外纳指限额</h2>
+              <span id="limitCount" class="badge muted">--</span>
+            </div>
+            <div class="limit-table-wrap">
+              <table class="limit-table">
+                <thead>
+                  <tr>
+                    <th>基金</th>
+                    <th>状态</th>
+                    <th>净值日</th>
+                  </tr>
+                </thead>
+                <tbody id="limitRows">
+                  <tr><td colspan="3">等待数据</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <footer class="source-strip">
+          <div id="sourceStatus">接口状态加载中</div>
+        </footer>
+      </main>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

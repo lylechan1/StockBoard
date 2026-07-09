@@ -1,0 +1,9 @@
+{
+  "source": "manual",
+  "updatedAt": null,
+  "note": "看板会用 QQQ 成分权重 + 东方财富美股动态 PE 近似估算纳指 PE；PEG 暂未接入稳定数据源，可在 current.peg 中手动填入。",
+  "current": {
+    "pe": null,
+    "peg": null
+  }
+}
