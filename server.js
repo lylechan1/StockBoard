@@ -290,8 +290,8 @@ async function getEtfQuotes() {
       const current = Number.isFinite(quotedCurrent) && quotedCurrent > 0 ? quotedCurrent : previousClose;
       const rawIopv = toNumber(iopvQuote[2]);
       const iopv = Number.isFinite(rawIopv) && rawIopv > 0 ? rawIopv : null;
-      const premium = Number.isFinite(quotedCurrent) && quotedCurrent > 0 && Number.isFinite(iopv)
-        ? ((quotedCurrent / iopv) - 1) * 100
+      const premium = Number.isFinite(current) && current > 0 && Number.isFinite(iopv)
+        ? ((current / iopv) - 1) * 100
         : null;
       return {
         ...item,
@@ -300,6 +300,7 @@ async function getEtfQuotes() {
         marketName: quote[0] || item.title,
         current: round(current, 4),
         priceIsPreviousClose: !(Number.isFinite(quotedCurrent) && quotedCurrent > 0),
+        premiumBasis: Number.isFinite(quotedCurrent) && quotedCurrent > 0 ? "live" : "previousClose",
         previousClose: round(previousClose, 4),
         changePct: round(pctChange(current, previousClose), 2),
         high: round(toNumber(quote[4]), 4),
