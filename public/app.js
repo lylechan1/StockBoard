@@ -61,9 +61,7 @@ const refs = {
   lastUpdated: document.getElementById("lastUpdated"),
   marketPulse: document.getElementById("marketPulse"),
   marketAlert: document.getElementById("marketAlert"),
-  marketAlertState: document.getElementById("marketAlertState"),
   marketAlertDate: document.getElementById("marketAlertDate"),
-  marketAlertSummary: document.getElementById("marketAlertSummary"),
   marketAlertAnalysis: document.getElementById("marketAlertAnalysis"),
   marketAlertLink: document.getElementById("marketAlertLink"),
   refreshBtn: document.getElementById("refreshBtn"),
@@ -303,17 +301,14 @@ function renderValuation(snapshot) {
 function renderMarketAlert(snapshot) {
   const alert = snapshot.marketAlert;
   if (!alert) {
-    setPill(refs.marketAlertState, "暂无数据", "muted");
     refs.marketAlertDate.textContent = "--";
-    refs.marketAlertSummary.textContent = "前一交易日数据暂不可用";
     refs.marketAlertAnalysis.textContent = "原因线索待更新";
+    refs.marketAlertAnalysis.dataset.tooltip = "前一交易日的原因线索暂不可用";
     refs.marketAlertLink.hidden = true;
     return;
   }
 
-  setPill(refs.marketAlertState, alert.state?.label || "每日提醒", alert.state?.level || "muted");
   refs.marketAlertDate.textContent = alert.date || "--";
-  refs.marketAlertSummary.textContent = alert.summary || "--";
   refs.marketAlertAnalysis.textContent = alert.analysis || "暂无原因线索";
   refs.marketAlertAnalysis.dataset.tooltip = `${alert.analysis || ""}。${alert.note || ""}`;
 

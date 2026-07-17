@@ -99,17 +99,21 @@ body {
 
 .brand-block {
   min-width: 0;
+  height: 54px;
+  padding: 2px 0;
+  display: grid;
+  align-content: center;
 }
 
 .market-alert {
   width: 100%;
   min-width: 0;
   height: 54px;
-  padding: 0;
+  padding: 2px 0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -117,9 +121,20 @@ body {
 }
 
 .market-alert-status {
+  height: 100%;
   display: grid;
+  align-content: center;
   justify-items: start;
   gap: 4px;
+}
+
+.market-alert-title {
+  color: #303640;
+  font-family: var(--num-font);
+  font-size: 14px;
+  line-height: 1.25;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .market-alert-status time {
@@ -130,29 +145,18 @@ body {
 
 .market-alert-copy {
   min-width: 0;
-  display: grid;
-  gap: 3px;
+  height: 100%;
+  display: flex;
+  align-items: center;
 }
 
-.market-alert-copy strong,
 .market-alert-copy span {
   overflow: hidden;
+  color: #667181;
+  font-size: 13px;
+  line-height: 1.45;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-.market-alert-copy strong {
-  color: #303640;
-  font-family: var(--num-font);
-  font-size: 13px;
-  line-height: 1.2;
-  font-weight: 500;
-}
-
-.market-alert-copy span {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.2;
 }
 
 .market-alert > a {
