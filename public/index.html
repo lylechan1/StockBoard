@@ -12,22 +12,22 @@
         <header class="topbar">
           <div class="brand-block">
             <h1>美股数据看板</h1>
-            <p id="lastUpdated">等待数据</p>
+            <p id="lastUpdated" data-tooltip="本次看板数据完成刷新的本地时间">等待数据</p>
           </div>
           <div class="topbar-right">
-            <div id="marketAlert" class="market-alert" title="异动原因由盘面与财经新闻线索自动归纳">
+            <div id="marketAlert" class="market-alert">
               <div class="market-alert-status">
-                <span id="marketAlertState" class="badge muted">异动同步中</span>
-                <time id="marketAlertDate">--</time>
+                <span id="marketAlertState" class="badge muted" data-tooltip="根据前一交易日指数波动幅度生成的提醒等级">异动同步中</span>
+                <time id="marketAlertDate" data-tooltip="最近一个完整美股交易日">--</time>
               </div>
               <div class="market-alert-copy">
-                <strong id="marketAlertSummary">等待前一交易日数据</strong>
-                <span id="marketAlertAnalysis">原因线索加载中</span>
+                <strong id="marketAlertSummary" data-tooltip="上一交易日纳指与标普500的收盘涨跌幅">等待前一交易日数据</strong>
+                <span id="marketAlertAnalysis" data-tooltip="结合指数相对表现、VIX和财经新闻主题生成的原因线索">原因线索加载中</span>
               </div>
               <a id="marketAlertLink" href="#" target="_blank" rel="noreferrer" hidden>新闻线索</a>
             </div>
             <div class="top-actions">
-              <div id="marketPulse" class="pulse neutral">同步中</div>
+              <div id="marketPulse" class="pulse neutral" data-tooltip="当前各数据接口的整体可用状态">同步中</div>
               <button id="refreshBtn" class="icon-button" type="button" title="刷新数据" aria-label="刷新数据">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M20 11a8 8 0 0 0-14.7-4.4L3 9m0 0V3m0 6h6M4 13a8 8 0 0 0 14.7 4.4L21 15m0 0v6m0-6h-6" />
@@ -45,33 +45,33 @@
           <article class="panel rebalance-panel">
             <div class="panel-head">
               <h2>调仓分析</h2>
-              <span id="valuationStatus" class="badge muted">估值同步中</span>
+              <span id="valuationStatus" class="badge muted" data-tooltip="PE或PEG当前是否有可用值">估值同步中</span>
             </div>
             <div class="rebalance-body">
               <div class="valuation-row highlight-row">
                 <div>
                   <span class="label">纳指 PE</span>
-                  <strong id="peValue">--</strong>
-                  <small id="peMeta">--</small>
-                  <small id="peHistory" class="pe-history">历史位置待评估</small>
+                  <strong id="peValue" data-tooltip="纳指100当前价格相对成分股盈利的估算市盈率" tabindex="0">--</strong>
+                  <small id="peMeta" data-tooltip="PE估算覆盖的QQQ成分权重及计算口径">--</small>
+                  <small id="peHistory" class="pe-history" data-tooltip="当前PE相对长期均值的大致位置">历史位置待评估</small>
                 </div>
-                <div id="peState" class="state-pill muted">数据不足</div>
+                <div id="peState" class="state-pill muted" data-tooltip="根据当前PE与长期估值中枢生成的区间状态">数据不足</div>
               </div>
               <div class="valuation-row">
                 <div>
                   <span class="label">纳指 PEG</span>
-                  <strong id="pegValue">--</strong>
-                  <small id="pegMeta">--</small>
+                  <strong id="pegValue" data-tooltip="市盈率相对盈利增长率的比值，用于同时观察估值与增长" tabindex="0">--</strong>
+                  <small id="pegMeta" data-tooltip="PEG数据是否已接入及其当前状态">--</small>
                 </div>
-                <div id="pegState" class="state-pill muted">数据不足</div>
+                <div id="pegState" class="state-pill muted" data-tooltip="当前PEG数据的可用状态">数据不足</div>
               </div>
               <div class="drawdown-box">
                 <div>
                   <span class="label">52周高点回撤</span>
-                  <strong id="drawdownValue">--</strong>
-                  <small id="drawdownMeta">--</small>
+                  <strong id="drawdownValue" data-tooltip="纳指100当前点位相对近52周最高点的跌幅" tabindex="0">--</strong>
+                  <small id="drawdownMeta" data-tooltip="近52周最高点的点位与出现日期">--</small>
                 </div>
-                <div id="drawdownState" class="state-pill muted">--</div>
+                <div id="drawdownState" class="state-pill muted" data-tooltip="根据52周回撤幅度划分的风险档位">--</div>
               </div>
             </div>
           </article>
@@ -80,14 +80,14 @@
             <article class="panel vix-panel">
               <div class="panel-head">
                 <h2>VIX</h2>
-                <span id="vixState" class="badge muted">--</span>
+                <span id="vixState" class="badge muted" data-tooltip="根据VIX数值划分的市场情绪状态">--</span>
               </div>
               <div class="vix-body">
                 <div class="vix-reading">
-                  <div class="vix-value" id="vixValue">--</div>
+                  <div class="vix-value" id="vixValue" data-tooltip="标普500期权隐含的未来30天预期波动率指数" tabindex="0">--</div>
                   <div class="vix-meta">
-                    <span id="vixChange">--</span>
-                    <span id="vixTime">--</span>
+                    <span id="vixChange" data-tooltip="VIX相对上一交易日的涨跌幅 / 点数变化">--</span>
+                    <span id="vixTime" data-tooltip="VIX延迟行情的更新时间">--</span>
                   </div>
                 </div>
                 <div class="vix-scale">
@@ -111,10 +111,10 @@
               <table class="execution-table">
                 <thead>
                   <tr>
-                    <th>PE</th>
-                    <th>回撤</th>
-                    <th>VIX</th>
-                    <th>操作</th>
+                    <th data-tooltip="纳指估值状态条件">PE</th>
+                    <th data-tooltip="纳指相对52周高点的回撤条件">回撤</th>
+                    <th data-tooltip="市场波动率指数条件">VIX</th>
+                    <th data-tooltip="满足该行条件时的目标配置">操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -131,7 +131,7 @@
           <article class="panel limits-panel">
             <div class="panel-head">
               <h2>场外纳指限额</h2>
-              <span id="limitCount" class="badge muted">--</span>
+              <span id="limitCount" class="badge muted" data-tooltip="当前收集到的场外纳指基金数量">--</span>
             </div>
             <div class="limit-table-wrap">
               <table class="limit-table">
