@@ -14,26 +14,24 @@
             <h1>美股数据看板</h1>
             <p id="lastUpdated" data-tooltip="本次看板数据完成刷新的本地时间">等待数据</p>
           </div>
-          <div class="topbar-right">
-            <div id="marketAlert" class="market-alert">
-              <div class="market-alert-status">
-                <span id="marketAlertState" class="badge muted" data-tooltip="根据前一交易日指数波动幅度生成的提醒等级">异动同步中</span>
-                <time id="marketAlertDate" data-tooltip="最近一个完整美股交易日">--</time>
-              </div>
-              <div class="market-alert-copy">
-                <strong id="marketAlertSummary" data-tooltip="上一交易日纳指与标普500的收盘涨跌幅">等待前一交易日数据</strong>
-                <span id="marketAlertAnalysis" data-tooltip="结合指数相对表现、VIX和财经新闻主题生成的原因线索">原因线索加载中</span>
-              </div>
-              <a id="marketAlertLink" href="#" target="_blank" rel="noreferrer" hidden>新闻线索</a>
+          <div id="marketAlert" class="market-alert">
+            <div class="market-alert-status">
+              <span id="marketAlertState" class="badge muted" data-tooltip="根据前一交易日指数波动幅度生成的提醒等级">异动同步中</span>
+              <time id="marketAlertDate" data-tooltip="最近一个完整美股交易日">--</time>
             </div>
-            <div class="top-actions">
-              <div id="marketPulse" class="pulse neutral" data-tooltip="当前各数据接口的整体可用状态">同步中</div>
-              <button id="refreshBtn" class="icon-button" type="button" title="刷新数据" aria-label="刷新数据">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M20 11a8 8 0 0 0-14.7-4.4L3 9m0 0V3m0 6h6M4 13a8 8 0 0 0 14.7 4.4L21 15m0 0v6m0-6h-6" />
-                </svg>
-              </button>
+            <div class="market-alert-copy">
+              <strong id="marketAlertSummary" data-tooltip="上一交易日纳指与标普500的收盘涨跌幅">等待前一交易日数据</strong>
+              <span id="marketAlertAnalysis" data-tooltip="结合指数相对表现、VIX和财经新闻主题生成的原因线索">原因线索加载中</span>
             </div>
+            <a id="marketAlertLink" href="#" target="_blank" rel="noreferrer" hidden>新闻线索</a>
+          </div>
+          <div class="top-actions">
+            <div id="marketPulse" class="pulse neutral" data-tooltip="当前各数据接口的整体可用状态">同步中</div>
+            <button id="refreshBtn" class="icon-button" type="button" title="刷新数据" aria-label="刷新数据">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 11a8 8 0 0 0-14.7-4.4L3 9m0 0V3m0 6h6M4 13a8 8 0 0 0 14.7 4.4L21 15m0 0v6m0-6h-6" />
+              </svg>
+            </button>
           </div>
         </header>
 
