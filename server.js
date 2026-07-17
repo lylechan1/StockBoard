@@ -24,6 +24,31 @@ const FUTURE_DEFS = [
   { symbol: "hf_ES", title: "标普500期货", unit: "USD" }
 ];
 
+const INDEX_CLOSE_DEFS = [
+  { key: "nasdaq", symbol: "usIXIC", code: ".IXIC", title: "纳指前日收盘" },
+  { key: "sp500", symbol: "usINX", code: ".INX", title: "标普前日收盘" }
+];
+
+const PE_HISTORY_REFERENCE = {
+  average: 28.9,
+  source: "GuruFocus Nasdaq-100 PE historical series",
+  sourceUrl: "https://www.gurufocus.com/economic_indicators/6778/nasdaq-100-pe-ratio"
+};
+
+const MARKET_NEWS_FEEDS = [
+  "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+  "https://www.cnbc.com/id/10000664/device/rss/rss.html"
+];
+
+const MARKET_NEWS_TOPICS = [
+  { label: "利率与通胀预期", pattern: /\bfed\b|federal reserve|interest rate|inflation|treasury|bond yield/i },
+  { label: "大型科技与AI", pattern: /nvidia|apple|microsoft|alphabet|google|amazon|meta|netflix|tesla|semiconductor|chip|\bai\b/i },
+  { label: "企业财报", pattern: /earning|revenue|forecast|guidance|profit/i },
+  { label: "油价与地缘风险", pattern: /oil|iran|war|hormuz|geopolit|middle east/i },
+  { label: "贸易与关税", pattern: /tariff|trade war|export control/i },
+  { label: "宏观增长预期", pattern: /recession|jobs|employment|housing|consumer|gdp|economy/i }
+];
+
 const FUND_SEARCH_KEYS = [
   "纳斯达克100",
   "华夏纳斯达克100",
@@ -181,6 +206,64 @@ function classifyDrawdown(value) {
   return { label: "极端", level: "extreme" };
 }
 
+function interpretPeHistory(value) {
+  if (!Number.isFinite(value)) return null;
+  const deviationPct = ((value / PE_HISTORY_REFERENCE.average) - 1) * 100;
+  let label = "历史中枢";
+  let assessment = "正常估值";
+  let level = "info";
+
+  if (value < 22) {
+    label = "历史低位";
+    assessment = "低估值";
+    level = "good";
+  } else if (value < 26) {
+    label = "常态下沿";
+    assessment = "偏低估值";
+    level = "good";
+  } else if (value < 31) {
+    label = "历史中枢";
+    assessment = "正常估值";
+  } else if (value < 35) {
+    label = "常态上沿";
+    assessment = "偏高估值";
+    level = "warning";
+  } else {
+    label = "历史高位";
+    assessment = "高估值";
+    level = "danger";
+  }
+
+  return {
+    label,
+    assessment,
+    level,
+    benchmarkPe: PE_HISTORY_REFERENCE.average,
+    deviationPct: round(deviationPct, 1),
+    source: PE_HISTORY_REFERENCE.source,
+    sourceUrl: PE_HISTORY_REFERENCE.sourceUrl,
+    note: "以长期均值作区间锚点，不代表精确历史分位"
+  };
+}
+
+function decodeXmlEntities(value) {
+  return String(value || "")
+    .replace(/^<!\[CDATA\[|\]\]>$/g, "")
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)))
+    .trim();
+}
+
+function readXmlTag(block, tag) {
+  const match = block.match(new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  return decodeXmlEntities(match?.[1]);
+}
+
 async function getEtfQuotes() {
   return withCache("etfs", 12_000, async () => {
     const list = ETF_DEFS.flatMap((item) => [item.symbol, `${item.symbol}_iopv`]).join(",");
@@ -202,11 +285,13 @@ async function getEtfQuotes() {
       const quote = vars[item.symbol] || [];
       const iopvQuote = vars[`${item.symbol}_iopv`] || [];
       const profile = fundProfiles.get(item.code) || {};
-      const current = toNumber(quote[3]);
+      const quotedCurrent = toNumber(quote[3]);
       const previousClose = toNumber(quote[2]);
-      const iopv = toNumber(iopvQuote[2]);
-      const premium = Number.isFinite(current) && Number.isFinite(iopv) && iopv !== 0
-        ? ((current / iopv) - 1) * 100
+      const current = Number.isFinite(quotedCurrent) && quotedCurrent > 0 ? quotedCurrent : previousClose;
+      const rawIopv = toNumber(iopvQuote[2]);
+      const iopv = Number.isFinite(rawIopv) && rawIopv > 0 ? rawIopv : null;
+      const premium = Number.isFinite(quotedCurrent) && quotedCurrent > 0 && Number.isFinite(iopv)
+        ? ((quotedCurrent / iopv) - 1) * 100
         : null;
       return {
         ...item,
@@ -214,6 +299,7 @@ async function getEtfQuotes() {
         exchangeName: item.symbol.startsWith("sh") ? "SH" : "SZ",
         marketName: quote[0] || item.title,
         current: round(current, 4),
+        priceIsPreviousClose: !(Number.isFinite(quotedCurrent) && quotedCurrent > 0),
         previousClose: round(previousClose, 4),
         changePct: round(pctChange(current, previousClose), 2),
         high: round(toNumber(quote[4]), 4),
@@ -295,6 +381,140 @@ async function getFutures() {
       };
     });
   });
+}
+
+async function getPreviousMarketCloses() {
+  return withCache("previous-market-closes", 60_000, async () => {
+    const tasks = INDEX_CLOSE_DEFS.map(async (item) => {
+      const json = await fetchJson(
+        `https://web.ifzq.gtimg.cn/appstock/app/usfqkline/get?param=${item.symbol},day,,,5,qfq`,
+        { headers: { "User-Agent": UA, Accept: "application/json,text/plain,*/*" } }
+      );
+      const node = json.data?.[item.symbol] || {};
+      const rows = (Array.isArray(node.day) ? node.day : [])
+        .map((row) => ({
+          date: row[0],
+          open: toNumber(row[1]),
+          close: toNumber(row[2]),
+          high: toNumber(row[3]),
+          low: toNumber(row[4])
+        }))
+        .filter((row) => row.date && Number.isFinite(row.close));
+      const latest = rows.at(-1);
+      const previous = rows.at(-2);
+      if (!latest || !previous) throw new Error(`${item.symbol} close history unavailable`);
+      const change = latest.close - previous.close;
+      return {
+        ...item,
+        source: "腾讯证券美股日线",
+        date: latest.date,
+        close: round(latest.close, 2),
+        previousClose: round(previous.close, 2),
+        change: round(change, 2),
+        changePct: round(pctChange(latest.close, previous.close), 2),
+        open: round(latest.open, 2),
+        high: round(latest.high, 2),
+        low: round(latest.low, 2)
+      };
+    });
+    return Promise.all(tasks);
+  });
+}
+
+async function getMarketNews() {
+  return withCache("market-news", 20 * 60_000, async () => {
+    const results = await Promise.allSettled(MARKET_NEWS_FEEDS.map((url) => fetchText(url, {
+      headers: { "User-Agent": UA, Accept: "application/rss+xml,application/xml,text/xml,*/*" }
+    })));
+    const items = results.flatMap((result) => {
+      if (result.status !== "fulfilled") return [];
+      return Array.from(result.value.matchAll(/<item>([\s\S]*?)<\/item>/gi)).map((match) => {
+        const block = match[1];
+        return {
+          title: readXmlTag(block, "title"),
+          description: readXmlTag(block, "description").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+          url: readXmlTag(block, "link"),
+          publishedAt: readXmlTag(block, "pubDate")
+        };
+      });
+    });
+    const deduped = new Map();
+    for (const item of items) {
+      if (!item.title || !item.url) continue;
+      const publishedTime = Date.parse(item.publishedAt);
+      if (Number.isFinite(publishedTime) && Date.now() - publishedTime > 4 * 24 * 60 * 60_000) continue;
+      if (!deduped.has(item.url)) deduped.set(item.url, item);
+    }
+    return Array.from(deduped.values()).sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
+  });
+}
+
+function buildMarketAlert(indexCloses, vix, news) {
+  const nasdaq = indexCloses.find((item) => item.key === "nasdaq");
+  const sp500 = indexCloses.find((item) => item.key === "sp500");
+  if (!nasdaq || !sp500) return null;
+
+  const maxMove = Math.max(Math.abs(nasdaq.changePct || 0), Math.abs(sp500.changePct || 0));
+  const spread = (nasdaq.changePct || 0) - (sp500.changePct || 0);
+  let state = { label: "常规波动", level: "good" };
+  if (maxMove >= 1.5 || Math.abs(sp500.changePct || 0) >= 1.25) {
+    state = { label: "显著异动", level: "danger" };
+  } else if (maxMove >= 1 || Math.abs(sp500.changePct || 0) >= 0.8) {
+    state = { label: "异动关注", level: "warning" };
+  }
+
+  const signals = [];
+  if (spread >= 0.7) signals.push("纳指明显强于标普，科技成长风格占优");
+  else if (spread <= -0.7) signals.push("纳指明显弱于标普，科技成长权重承压");
+  else if (nasdaq.changePct > 0 && sp500.changePct > 0) signals.push("主要指数同步上涨，风险偏好改善");
+  else if (nasdaq.changePct < 0 && sp500.changePct < 0) signals.push("主要指数同步回落，风险偏好降温");
+  else signals.push("纳指与标普走势分化，市场风格切换明显");
+
+  if (Number.isFinite(vix?.changePct) && vix.changePct >= 5) signals.push("VIX同步抬升，避险需求增加");
+  else if (Number.isFinite(vix?.changePct) && vix.changePct <= -5) signals.push("VIX回落，波动率压力缓和");
+
+  const sessionStart = Date.parse(`${nasdaq.date}T00:00:00Z`);
+  const sessionNews = news.filter((item) => {
+    const publishedTime = Date.parse(item.publishedAt);
+    return Number.isFinite(publishedTime) && publishedTime >= sessionStart - 6 * 60 * 60_000
+      && publishedTime < sessionStart + 36 * 60 * 60_000;
+  });
+  const analysisNews = sessionNews.length ? sessionNews : news.slice(0, 20);
+  const topicScores = MARKET_NEWS_TOPICS.map((topic) => ({
+    ...topic,
+    score: analysisNews.reduce((count, item) => count + (topic.pattern.test(`${item.title} ${item.description}`) ? 1 : 0), 0)
+  })).filter((topic) => topic.score > 0).sort((a, b) => b.score - a.score);
+  if (topicScores.length) {
+    signals.push(`当日新闻线索集中在${topicScores.slice(0, 2).map((topic) => topic.label).join("、")}`);
+  }
+
+  const directionPattern = nasdaq.changePct < 0
+    ? /fall|drop|lower|decline|selloff|disappoint|delay|pressure/i
+    : /rise|rally|gain|higher|soar|surge|beat|record/i;
+  const relevantNews = analysisNews
+    .map((item) => ({
+      ...item,
+      score: MARKET_NEWS_TOPICS.reduce(
+        (score, topic) => score + (topic.pattern.test(`${item.title} ${item.description}`) ? 1 : 0),
+        0
+      ) + (directionPattern.test(item.title) ? 2 : 0)
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score || Date.parse(b.publishedAt) - Date.parse(a.publishedAt))[0] || null;
+
+  return {
+    date: nasdaq.date,
+    state,
+    summary: `纳指 ${nasdaq.changePct > 0 ? "+" : ""}${nasdaq.changePct.toFixed(2)}% · 标普 ${sp500.changePct > 0 ? "+" : ""}${sp500.changePct.toFixed(2)}%`,
+    analysis: signals.join("；"),
+    note: "原因分析为盘面与新闻线索归纳，不代表已确认因果",
+    news: relevantNews ? {
+      title: relevantNews.title,
+      url: relevantNews.url,
+      publishedAt: relevantNews.publishedAt,
+      source: "CNBC RSS"
+    } : null
+  };
 }
 
 async function getVix() {
@@ -468,24 +688,56 @@ async function getEstimatedNasdaqPe() {
   });
 }
 
+async function getPublicNasdaqPeFallback() {
+  return withCache("public-nasdaq-pe-fallback", 6 * 60 * 60_000, async () => {
+    const sourceUrl = "https://worldperatio.com/index/nasdaq-100/";
+    const html = await fetchText(sourceUrl, {
+      headers: { "User-Agent": UA, Accept: "text/html,application/xhtml+xml" }
+    });
+    const match = html.match(/vs Current P\/E<br>\s*\(\s*([0-9]+(?:\.[0-9]+)?)\s*\)/i);
+    const value = toNumber(match?.[1]);
+    if (!Number.isFinite(value)) throw new Error("Public Nasdaq-100 PE unavailable");
+    return {
+      value: round(value, 2),
+      source: "World PE Ratio Nasdaq-100",
+      sourceUrl,
+      method: "第三方公开指数估值备用值"
+    };
+  });
+}
+
 async function getValuation() {
   return withCache("valuation", 20_000, async () => {
     const fileData = await readValuationData();
 
-    const [alpha, estimatedPe] = await Promise.allSettled([
+    const [alpha, estimatedPe, publicPe] = await Promise.allSettled([
       getAlphaVantageValuation(),
-      getEstimatedNasdaqPe()
+      getEstimatedNasdaqPe(),
+      getPublicNasdaqPeFallback()
     ]);
     const alphaData = alpha.status === "fulfilled" ? alpha.value : null;
     const peEstimate = estimatedPe.status === "fulfilled" ? estimatedPe.value : null;
+    const peFallback = publicPe.status === "fulfilled" ? publicPe.value : null;
     const current = fileData.current || {};
-    const pe = toNumber(current.pe) ?? toNumber(alphaData?.current?.pe) ?? toNumber(peEstimate?.value);
+    const manualPe = toNumber(current.pe);
+    const alphaPe = toNumber(alphaData?.current?.pe);
+    const estimatedPeValue = toNumber(peEstimate?.value);
+    const fallbackPeValue = toNumber(peFallback?.value);
+    const pe = manualPe ?? alphaPe ?? estimatedPeValue ?? fallbackPeValue;
     const peg = toNumber(current.peg) ?? toNumber(alphaData?.current?.peg);
-    const peSource = Number.isFinite(toNumber(current.pe))
+    const peSource = Number.isFinite(manualPe)
       ? fileData.source || "manual"
-      : Number.isFinite(toNumber(alphaData?.current?.pe))
+      : Number.isFinite(alphaPe)
         ? alphaData.source
-        : peEstimate?.source || null;
+        : Number.isFinite(estimatedPeValue)
+          ? peEstimate.source
+          : Number.isFinite(fallbackPeValue)
+            ? peFallback.source
+            : null;
+    const usesEstimatedPe = !Number.isFinite(manualPe) && !Number.isFinite(alphaPe)
+      && Number.isFinite(estimatedPeValue);
+    const usesFallbackPe = !Number.isFinite(manualPe) && !Number.isFinite(alphaPe)
+      && !Number.isFinite(estimatedPeValue) && Number.isFinite(fallbackPeValue);
     const pegSource = Number.isFinite(toNumber(current.peg))
       ? fileData.source || "manual"
       : Number.isFinite(toNumber(alphaData?.current?.peg))
@@ -503,10 +755,11 @@ async function getValuation() {
           ? { label: Number.isFinite(toNumber(current.pe)) ? "手动值" : "当前估算", level: "info" }
           : { label: "待接入", level: "muted" },
         source: peSource,
-        coveragePct: peEstimate?.coveragePct ?? null,
-        method: peEstimate?.method ?? null,
-        usedCount: peEstimate?.usedCount ?? null,
-        holdingsCount: peEstimate?.holdingsCount ?? null
+        coveragePct: usesEstimatedPe ? peEstimate.coveragePct ?? null : null,
+        method: usesEstimatedPe ? peEstimate.method : usesFallbackPe ? peFallback.method : null,
+        usedCount: usesEstimatedPe ? peEstimate.usedCount ?? null : null,
+        holdingsCount: usesEstimatedPe ? peEstimate.holdingsCount ?? null : null,
+        history: interpretPeHistory(pe)
       },
       peg: {
         value: round(peg, 2),
@@ -626,16 +879,18 @@ async function capture(name, getter, fallback) {
 }
 
 async function getSnapshot() {
-  const [futures, etfs, vix, drawdown, valuation, fundLimits] = await Promise.all([
+  const [futures, indexCloses, etfs, vix, drawdown, valuation, fundLimits, marketNews] = await Promise.all([
     capture("纳指/标普期货", getFutures, []),
+    capture("美股前收", getPreviousMarketCloses, []),
     capture("ETF IOPV", getEtfQuotes, []),
     capture("VIX", getVix, null),
     capture("纳指回撤", getNasdaqDrawdown, null),
     capture("PE/PEG", getValuation, null),
-    capture("场外限额", getFundLimits, { funds: [], count: 0 })
+    capture("场外限额", getFundLimits, { funds: [], count: 0 }),
+    capture("异动新闻", getMarketNews, [])
   ]);
 
-  const sources = [futures, etfs, vix, drawdown, valuation, fundLimits].map((item) => ({
+  const sources = [futures, indexCloses, etfs, vix, drawdown, valuation, fundLimits, marketNews].map((item) => ({
     name: item.name,
     ok: item.ok,
     latencyMs: item.latencyMs,
@@ -645,11 +900,13 @@ async function getSnapshot() {
   return {
     generatedAt: nowIso(),
     futures: futures.data,
+    indexCloses: indexCloses.data,
     etfs: etfs.data,
     vix: vix.data,
     drawdown: drawdown.data,
     valuation: valuation.data,
     fundLimits: fundLimits.data,
+    marketAlert: buildMarketAlert(indexCloses.data, vix.data, marketNews.data),
     sources
   };
 }
@@ -731,10 +988,12 @@ module.exports = {
   getSnapshot,
   getEtfQuotes,
   getFutures,
+  getPreviousMarketCloses,
   getVix,
   getNasdaqDrawdown,
   getFundLimits,
   getValuation,
   getEstimatedNasdaqPe,
+  getPublicNasdaqPeFallback,
   startServer
 };

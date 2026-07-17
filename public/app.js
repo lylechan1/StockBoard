@@ -4,10 +4,17 @@ const refs = {
   metricCards: document.getElementById("metricCards"),
   lastUpdated: document.getElementById("lastUpdated"),
   marketPulse: document.getElementById("marketPulse"),
+  marketAlert: document.getElementById("marketAlert"),
+  marketAlertState: document.getElementById("marketAlertState"),
+  marketAlertDate: document.getElementById("marketAlertDate"),
+  marketAlertSummary: document.getElementById("marketAlertSummary"),
+  marketAlertAnalysis: document.getElementById("marketAlertAnalysis"),
+  marketAlertLink: document.getElementById("marketAlertLink"),
   refreshBtn: document.getElementById("refreshBtn"),
   valuationStatus: document.getElementById("valuationStatus"),
   peValue: document.getElementById("peValue"),
   peMeta: document.getElementById("peMeta"),
+  peHistory: document.getElementById("peHistory"),
   peState: document.getElementById("peState"),
   pegValue: document.getElementById("pegValue"),
   pegMeta: document.getElementById("pegMeta"),
@@ -109,6 +116,26 @@ function metricCard({ title, code, value, state, metaLeft, metaRight, changePct,
     `;
   }
 
+  if (variant === "market") {
+    return `
+      <article class="${cardClass.join(" ")}">
+        <div class="metric-title">
+          <h3 title="${title}">${title}</h3>
+          <span class="metric-code">${code || ""}</span>
+        </div>
+        <div class="market-close-focus">
+          <div class="market-close-change ${changeClass}">${value}</div>
+          <span class="badge muted">已收盘</span>
+        </div>
+        <div class="market-close-price">${secondaryValue || "--"}</div>
+        <div class="metric-sub">
+          <span>${metaLeft || "--"}</span>
+          <span>${metaRight || "--"}</span>
+        </div>
+      </article>
+    `;
+  }
+
   return `
     <article class="${cardClass.join(" ")}">
       <div class="metric-title">
@@ -147,6 +174,18 @@ function renderMetricCards(snapshot) {
     variant: "future"
   }));
 
+  const indexCloses = (snapshot.indexCloses || []).map((item) => metricCard({
+    title: item.title,
+    code: item.code,
+    value: formatPercent(item.changePct, 2),
+    secondaryValue: `收盘 ${formatNumber(item.close, 2)} / ${formatSignedNumber(item.change, 2)}`,
+    metaLeft: `${formatNumber(item.low, 0)} / ${formatNumber(item.high, 0)}`,
+    metaRight: item.date,
+    changePct: item.changePct,
+    tone: item.changePct >= 0 ? "green" : "red",
+    variant: "market"
+  }));
+
   const etfs = (snapshot.etfs || []).map((item) => metricCard({
     title: item.title,
     code: item.code,
@@ -155,14 +194,14 @@ function renderMetricCards(snapshot) {
       ? `规模 ${formatNumber(item.fundScaleBillion, 2)}亿`
       : "规模 --",
     state: item.premiumState,
-    metaLeft: `价 ${formatNumber(item.current, 3)} / IOPV ${formatNumber(item.iopv, 3)}`,
+    metaLeft: `${item.priceIsPreviousClose ? "昨收" : "价"} ${formatNumber(item.current, 3)} / IOPV ${formatNumber(item.iopv, 3)}`,
     metaRight: `${formatNumber(item.amount, 2)}亿`,
     changePct: item.premiumPct,
     small: true,
     tone: toneFromState(item.premiumState, "blue")
   }));
 
-  refs.metricCards.innerHTML = [...futures, ...etfs].join("");
+  refs.metricCards.innerHTML = [...futures, ...indexCloses, ...etfs].join("");
 }
 
 function renderValuation(snapshot) {
@@ -172,11 +211,23 @@ function renderValuation(snapshot) {
   refs.peValue.textContent = formatNumber(pe.value, 2);
   const peParts = [];
   if (Number.isFinite(pe.coveragePct)) peParts.push(`覆盖 ${formatNumber(pe.coveragePct, 1)}%`);
-  if (pe.method) peParts.push("QQQ成分估算");
+  if (pe.method) peParts.push(pe.method.includes("备用") ? "公开指数备用" : "QQQ成分估算");
   refs.peMeta.textContent = peParts.length ? peParts.join(" | ") : "--";
+  if (pe.history) {
+    const direction = pe.history.deviationPct >= 0 ? "高" : "低";
+    refs.peHistory.textContent = `${pe.history.assessment} | 较长期均值 ${formatNumber(pe.history.benchmarkPe, 1)}x ${direction}${formatNumber(Math.abs(pe.history.deviationPct), 1)}%`;
+    refs.peHistory.title = `${pe.history.note}；参考：${pe.history.source}`;
+  } else {
+    refs.peHistory.textContent = "历史位置待评估";
+    refs.peHistory.title = "";
+  }
   refs.pegValue.textContent = formatNumber(peg.value, 2);
   refs.pegMeta.textContent = peg.source ? "当前值已接入" : "PEG待接入";
-  setPill(refs.peState, pe.state?.label || "待接入", pe.state?.level || "muted");
+  setPill(
+    refs.peState,
+    pe.history?.label || pe.state?.label || "待接入",
+    pe.history?.level || pe.state?.level || "muted"
+  );
   setPill(refs.pegState, peg.state?.label || "待接入", peg.state?.level || "muted");
   setPill(
     refs.valuationStatus,
@@ -190,6 +241,34 @@ function renderValuation(snapshot) {
     ? `高点 ${formatNumber(drawdown.high52w, 0)} | ${drawdown.high52wDate || "--"}`
     : "--";
   setPill(refs.drawdownState, drawdown.state?.label || "--", drawdown.state?.level || "muted");
+}
+
+function renderMarketAlert(snapshot) {
+  const alert = snapshot.marketAlert;
+  if (!alert) {
+    setPill(refs.marketAlertState, "暂无数据", "muted");
+    refs.marketAlertDate.textContent = "--";
+    refs.marketAlertSummary.textContent = "前一交易日数据暂不可用";
+    refs.marketAlertAnalysis.textContent = "原因线索待更新";
+    refs.marketAlertLink.hidden = true;
+    return;
+  }
+
+  setPill(refs.marketAlertState, alert.state?.label || "每日提醒", alert.state?.level || "muted");
+  refs.marketAlertDate.textContent = alert.date || "--";
+  refs.marketAlertSummary.textContent = alert.summary || "--";
+  refs.marketAlertAnalysis.textContent = alert.analysis || "暂无原因线索";
+  refs.marketAlert.title = `${alert.analysis || ""}。${alert.note || ""}`;
+
+  const url = alert.news?.url;
+  if (url && /^https:\/\//i.test(url)) {
+    refs.marketAlertLink.href = url;
+    refs.marketAlertLink.title = alert.news.title || "查看相关财经新闻";
+    refs.marketAlertLink.hidden = false;
+  } else {
+    refs.marketAlertLink.removeAttribute("href");
+    refs.marketAlertLink.hidden = true;
+  }
 }
 
 function renderVix(snapshot) {
@@ -241,6 +320,7 @@ function renderSources(snapshot) {
 function render(snapshot) {
   refs.lastUpdated.textContent = `更新时间 ${formatTime(snapshot.generatedAt)}`;
   renderMetricCards(snapshot);
+  renderMarketAlert(snapshot);
   renderValuation(snapshot);
   renderVix(snapshot);
   renderLimits(snapshot);

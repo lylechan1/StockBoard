@@ -10,17 +10,30 @@
     <div class="app-shell">
       <main class="dashboard">
         <header class="topbar">
-          <div>
+          <div class="brand-block">
             <h1>美股数据看板</h1>
             <p id="lastUpdated">等待数据</p>
           </div>
-          <div class="top-actions">
-            <div id="marketPulse" class="pulse neutral">同步中</div>
-            <button id="refreshBtn" class="icon-button" type="button" title="刷新数据" aria-label="刷新数据">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M20 11a8 8 0 0 0-14.7-4.4L3 9m0 0V3m0 6h6M4 13a8 8 0 0 0 14.7 4.4L21 15m0 0v6m0-6h-6" />
-              </svg>
-            </button>
+          <div class="topbar-right">
+            <div id="marketAlert" class="market-alert" title="异动原因由盘面与财经新闻线索自动归纳">
+              <div class="market-alert-status">
+                <span id="marketAlertState" class="badge muted">异动同步中</span>
+                <time id="marketAlertDate">--</time>
+              </div>
+              <div class="market-alert-copy">
+                <strong id="marketAlertSummary">等待前一交易日数据</strong>
+                <span id="marketAlertAnalysis">原因线索加载中</span>
+              </div>
+              <a id="marketAlertLink" href="#" target="_blank" rel="noreferrer" hidden>新闻线索</a>
+            </div>
+            <div class="top-actions">
+              <div id="marketPulse" class="pulse neutral">同步中</div>
+              <button id="refreshBtn" class="icon-button" type="button" title="刷新数据" aria-label="刷新数据">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 11a8 8 0 0 0-14.7-4.4L3 9m0 0V3m0 6h6M4 13a8 8 0 0 0 14.7 4.4L21 15m0 0v6m0-6h-6" />
+                </svg>
+              </button>
+            </div>
           </div>
         </header>
 
@@ -40,6 +53,7 @@
                   <span class="label">纳指 PE</span>
                   <strong id="peValue">--</strong>
                   <small id="peMeta">--</small>
+                  <small id="peHistory" class="pe-history">历史位置待评估</small>
                 </div>
                 <div id="peState" class="state-pill muted">数据不足</div>
               </div>
