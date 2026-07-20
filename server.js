@@ -183,10 +183,10 @@ function pctChange(current, previous) {
 
 function classifyPremium(value) {
   if (!Number.isFinite(value)) return { label: "无数据", level: "muted" };
-  if (value >= 8) return { label: "高溢价", level: "danger" };
-  if (value >= 3) return { label: "溢价", level: "warning" };
-  if (value >= -1) return { label: "贴近IOPV", level: "good" };
-  return { label: "折价", level: "info" };
+  if (value >= 8) return { label: "超高溢价 | 不建议买入", level: "danger" };
+  if (value >= 3) return { label: "高溢价 | 不建议买入", level: "warning" };
+  if (value >= -1) return { label: "正常 | 可买入", level: "good" };
+  return { label: "折价 | 建议买入", level: "info" };
 }
 
 function classifyVix(value) {

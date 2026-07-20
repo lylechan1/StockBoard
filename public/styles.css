@@ -347,16 +347,28 @@ b {
 .metric-main {
   min-width: 0;
   align-self: center;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
 }
 
 .metric-value-stack {
   min-width: 0;
   display: grid;
   gap: 8px;
+}
+
+.metric-value-row {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.metric-value-row > .badge {
+  min-width: 0;
+  flex: 0 1 auto;
+  margin-top: 5px;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
 }
 
 .metric-value {

@@ -198,10 +198,12 @@ function metricCard({ title, code, value, state, metaLeft, metaRight, changePct,
       </div>
       <div class="metric-main">
         <div class="metric-value-stack">
-          <div class="metric-value ${small ? "small" : ""}" data-tooltip="ETF市场价格相对IOPV的溢价率；正数为溢价，负数为折价" tabindex="0">${value}</div>
+          <div class="metric-value-row">
+            <div class="metric-value ${small ? "small" : ""}" data-tooltip="ETF市场价格相对IOPV的溢价率；正数为溢价，负数为折价" tabindex="0">${value}</div>
+            ${state ? `<span class="badge ${state.level || "muted"}" data-tooltip="根据当前溢价率区间生成的状态">${state.label}</span>` : ""}
+          </div>
           ${secondaryValue ? `<div class="metric-detail" data-tooltip="基金最近披露的资产净值规模">${secondaryValue}</div>` : ""}
         </div>
-        ${state ? `<span class="badge ${state.level || "muted"}" data-tooltip="根据当前溢价率区间生成的状态">${state.label}</span>` : ""}
       </div>
       <div class="metric-sub">
         <span class="${changeClass}" data-tooltip="ETF实时价格或昨收 / 盘中参考净值IOPV">${metaLeft || "--"}</span>
