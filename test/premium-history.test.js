@@ -1,7 +1,11 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { STORAGE_KEY, recordPremiums } = require("../public/premium-history.js");
+const {
+  STORAGE_KEY,
+  recordPremiums,
+  classifyAgainstAverage
+} = require("../public/premium-history.js");
 
 function createStorage() {
   const values = new Map();
@@ -46,4 +50,18 @@ test("does not count the same snapshot twice and ignores invalid premiums", () =
   assert.equal(result["159655"].count, 1);
   assert.equal(result["159655"].average, 7.5);
   assert.equal(result["513650"], undefined);
+});
+
+test("classifies current premium only as high or low relative to its average", () => {
+  assert.deepEqual(classifyAgainstAverage(8.2, 8.1), {
+    label: "高",
+    level: "danger",
+    comparison: "above"
+  });
+  assert.deepEqual(classifyAgainstAverage(7.9, 8.1), {
+    label: "低",
+    level: "good",
+    comparison: "atOrBelow"
+  });
+  assert.equal(classifyAgainstAverage(8.1, 8.1).label, "低");
 });

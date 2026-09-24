@@ -61,5 +61,15 @@
     return state.funds;
   }
 
-  return { STORAGE_KEY, emptyState, load, recordPremiums };
+  function classifyAgainstAverage(current, average) {
+    if (!Number.isFinite(current) || !Number.isFinite(average)) {
+      return { label: "--", level: "muted", comparison: null };
+    }
+    if (current > average) {
+      return { label: "高", level: "danger", comparison: "above" };
+    }
+    return { label: "低", level: "good", comparison: "atOrBelow" };
+  }
+
+  return { STORAGE_KEY, emptyState, load, recordPremiums, classifyAgainstAverage };
 });

@@ -162,7 +162,8 @@ function metricCard({
   detailLeft,
   detailRight,
   detailLeftTooltip,
-  detailRightTooltip
+  detailRightTooltip,
+  stateTooltip
 }) {
   const changeClass = classForChange(changePct);
   const cardClass = ["metric-card", `tone-${tone || "blue"}`];
@@ -216,7 +217,7 @@ function metricCard({
         <div class="metric-value-stack">
           <div class="metric-value-row">
             <div class="metric-value ${small ? "small" : ""}" data-tooltip="ETF市场价格相对IOPV的溢价率；正数为溢价，负数为折价" tabindex="0">${value}</div>
-            ${state ? `<span class="badge ${state.level || "muted"}" data-tooltip="根据当前溢价率区间生成的状态">${state.label}</span>` : ""}
+            ${state ? `<span class="badge ${state.level || "muted"}" data-tooltip="${stateTooltip || "当前数据状态"}">${state.label}</span>` : ""}
           </div>
           ${detailLeft || detailRight ? `
             <div class="metric-detail">
@@ -272,6 +273,10 @@ function renderMetricCards(snapshot) {
   const etfs = (snapshot.etfs || []).map((item) => {
     const history = premiumHistory[item.code];
     const firstRecorded = history?.firstRecordedAt ? formatTime(history.firstRecordedAt) : "--";
+    const relativeState = window.PremiumHistory?.classifyAgainstAverage(
+      item.premiumPct,
+      history?.average
+    ) || { label: "--", level: "muted", comparison: null };
     return metricCard({
       title: item.title,
       code: item.code,
@@ -286,12 +291,17 @@ function renderMetricCards(snapshot) {
         ? `本浏览器自 ${firstRecorded} 起记录的 ${history.count} 次有效溢价样本累计平均；刷新或服务重启后继续保留`
         : "等待首个有效溢价样本",
       detailRightTooltip: "基金最近披露的资产净值规模",
-      state: item.premiumState,
+      state: relativeState,
+      stateTooltip: relativeState.comparison === "above"
+        ? "当前溢价高于记录以来的平均溢价"
+        : relativeState.comparison === "atOrBelow"
+          ? "当前溢价低于或等于记录以来的平均溢价"
+          : "累计均溢价暂不可用",
       metaLeft: `${item.priceIsPreviousClose ? "昨收" : "价"} ${formatNumber(item.current, 3)} / IOPV ${formatNumber(item.iopv, 3)}`,
       metaRight: `${formatNumber(item.amount, 2)}亿`,
       changePct: item.premiumPct,
       small: true,
-      tone: toneFromState(item.premiumState, "blue")
+      tone: toneFromState(relativeState, "blue")
     });
   });
 
