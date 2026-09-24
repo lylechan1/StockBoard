@@ -5,7 +5,8 @@
   "description": "Card style US index and China-listed ETF dashboard",
   "type": "commonjs",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=18"

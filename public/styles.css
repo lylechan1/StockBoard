@@ -384,11 +384,19 @@ b {
 
 .metric-detail {
   min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   color: #404754;
   font-family: var(--num-font);
   font-size: 15px;
   line-height: 1.25;
   white-space: nowrap;
+}
+
+.metric-detail span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }

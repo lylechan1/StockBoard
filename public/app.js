@@ -147,7 +147,23 @@ function toneFromState(state, fallback = "blue") {
   return fallback;
 }
 
-function metricCard({ title, code, value, state, metaLeft, metaRight, changePct, small, tone, variant, secondaryValue }) {
+function metricCard({
+  title,
+  code,
+  value,
+  state,
+  metaLeft,
+  metaRight,
+  changePct,
+  small,
+  tone,
+  variant,
+  secondaryValue,
+  detailLeft,
+  detailRight,
+  detailLeftTooltip,
+  detailRightTooltip
+}) {
   const changeClass = classForChange(changePct);
   const cardClass = ["metric-card", `tone-${tone || "blue"}`];
   if (variant) cardClass.push(`metric-card-${variant}`);
@@ -202,7 +218,12 @@ function metricCard({ title, code, value, state, metaLeft, metaRight, changePct,
             <div class="metric-value ${small ? "small" : ""}" data-tooltip="ETF市场价格相对IOPV的溢价率；正数为溢价，负数为折价" tabindex="0">${value}</div>
             ${state ? `<span class="badge ${state.level || "muted"}" data-tooltip="根据当前溢价率区间生成的状态">${state.label}</span>` : ""}
           </div>
-          ${secondaryValue ? `<div class="metric-detail" data-tooltip="基金最近披露的资产净值规模">${secondaryValue}</div>` : ""}
+          ${detailLeft || detailRight ? `
+            <div class="metric-detail">
+              <span data-tooltip="${detailLeftTooltip || ""}" tabindex="0">${detailLeft || "--"}</span>
+              <span data-tooltip="${detailRightTooltip || ""}" tabindex="0">${detailRight || "--"}</span>
+            </div>
+          ` : secondaryValue ? `<div class="metric-detail">${secondaryValue}</div>` : ""}
         </div>
       </div>
       <div class="metric-sub">
@@ -215,6 +236,11 @@ function metricCard({ title, code, value, state, metaLeft, metaRight, changePct,
 
 function renderMetricCards(snapshot) {
   hideDataTooltip();
+  const premiumHistory = window.PremiumHistory?.recordPremiums(
+    snapshot.etfs || [],
+    snapshot.generatedAt,
+    window.localStorage
+  ) || {};
   const futures = (snapshot.futures || []).map((item) => metricCard({
     title: item.title,
     code: item.symbol.replace("hf_", ""),
@@ -243,20 +269,31 @@ function renderMetricCards(snapshot) {
     variant: "market"
   }));
 
-  const etfs = (snapshot.etfs || []).map((item) => metricCard({
-    title: item.title,
-    code: item.code,
-    value: formatPercent(item.premiumPct, 2),
-    secondaryValue: Number.isFinite(item.fundScaleBillion)
-      ? `规模 ${formatNumber(item.fundScaleBillion, 2)}亿`
-      : "规模 --",
-    state: item.premiumState,
-    metaLeft: `${item.priceIsPreviousClose ? "昨收" : "价"} ${formatNumber(item.current, 3)} / IOPV ${formatNumber(item.iopv, 3)}`,
-    metaRight: `${formatNumber(item.amount, 2)}亿`,
-    changePct: item.premiumPct,
-    small: true,
-    tone: toneFromState(item.premiumState, "blue")
-  }));
+  const etfs = (snapshot.etfs || []).map((item) => {
+    const history = premiumHistory[item.code];
+    const firstRecorded = history?.firstRecordedAt ? formatTime(history.firstRecordedAt) : "--";
+    return metricCard({
+      title: item.title,
+      code: item.code,
+      value: formatPercent(item.premiumPct, 2),
+      detailLeft: Number.isFinite(history?.average)
+        ? `均溢价 ${formatNumber(history.average, 2)}%`
+        : "均溢价 --",
+      detailRight: Number.isFinite(item.fundScaleBillion)
+        ? `规模 ${formatNumber(item.fundScaleBillion, 2)}亿`
+        : "规模 --",
+      detailLeftTooltip: history?.count
+        ? `本浏览器自 ${firstRecorded} 起记录的 ${history.count} 次有效溢价样本累计平均；刷新或服务重启后继续保留`
+        : "等待首个有效溢价样本",
+      detailRightTooltip: "基金最近披露的资产净值规模",
+      state: item.premiumState,
+      metaLeft: `${item.priceIsPreviousClose ? "昨收" : "价"} ${formatNumber(item.current, 3)} / IOPV ${formatNumber(item.iopv, 3)}`,
+      metaRight: `${formatNumber(item.amount, 2)}亿`,
+      changePct: item.premiumPct,
+      small: true,
+      tone: toneFromState(item.premiumState, "blue")
+    });
+  });
 
   refs.metricCards.innerHTML = [...futures, ...indexCloses, ...etfs].join("");
 }
