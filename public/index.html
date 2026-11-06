@@ -38,6 +38,17 @@
           <div id="metricCards" class="metric-grid"></div>
         </section>
 
+        <section id="spTiming" class="panel timing-panel" aria-label="标普500月内择时实验">
+          <div class="panel-head"><h2>25日至次月5日月内择时实验</h2><span class="badge info">仅标普500 · 观察实验</span></div>
+          <div class="timing-controls"><label>窗口月份 <input id="timingMonth" type="month" required></label><label>回撤阈值 % <input id="timingThreshold" type="number" value="2" min="0.1" max="50" step="0.1" required></label><button id="timingSaveRule" type="button">保存本期规则</button><span id="timingMessage" role="status"></span></div>
+          <p class="timing-note">美股交易日期；25日前一交易日收盘为基准。以每日收盘相对窗口内此前最高收盘的回撤触发，首次触发后的下一交易日收盘作为实验买入价；未触发则按5日对照价兜底。休市顺延到窗口内下一交易日，越过5日则无可执行价格。默认2%仅为实验初值。</p>
+          <div id="timingSummary" class="timing-summary"></div>
+          <div id="timingChart" class="timing-chart" aria-live="polite">标普日线加载中</div>
+          <div class="timing-columns"><div><h3>阈值与固定日期对照</h3><div class="timing-table"><table><thead><tr><th>策略</th><th>信号 / 执行日</th><th>收盘买入价</th><th>相对5日份额差</th></tr></thead><tbody id="timingComparison"></tbody></table></div></div><div><h3>历史验证 · 占位</h3><p class="timing-note">累计样本、触发率、相对固定日胜率及平均份额差待验证。当前只展示所选窗口，不将单期结果视为预测。</p><small>需完整逐日历史、冻结的事前规则、样本外检验及费用/汇率/基金净值口径；尚未运行历史回测。</small></div></div>
+          <details><summary>实验日志与规则记录</summary><form id="timingLogForm" class="timing-controls"><label>实际执行日期 <input id="timingLogDate" type="date" required></label><label>实际买入价 / 净值 <input id="timingLogPrice" type="number" min="0.0001" step="any" required></label><label>备注 <input id="timingLogNote" maxlength="300" placeholder="如提前执行的原因"></label><button type="submit">记录执行</button><button id="timingExport" type="button">导出日志</button></form><div id="timingLogs"></div></details>
+          <small>指数实验价格不等于基金成交净值，不含费用与汇率。规则及日志仅保存在本浏览器，请定期导出。</small>
+        </section>
+
         <section class="analysis-grid" aria-label="分析面板">
           <article class="panel rebalance-panel">
             <div class="panel-head">
@@ -155,5 +166,6 @@
 
     <script src="/premium-history.js"></script>
     <script src="/app.js"></script>
+    <script src="/sp-timing.js"></script>
   </body>
 </html>

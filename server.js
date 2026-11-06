@@ -912,6 +912,23 @@ async function getSnapshot() {
   };
 }
 
+async function getSpTimingHistory() {
+  return withCache("sp-timing-history", 60_000, async () => {
+    const json = await fetchJson("https://web.ifzq.gtimg.cn/appstock/app/usfqkline/get?param=usINX,day,,,320,qfq", {
+      headers: { "User-Agent": UA, Accept: "application/json,text/plain,*/*" }
+    });
+    const parts = new Intl.DateTimeFormat("en-CA", {timeZone:"America/New_York", year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+    const datePart = type => parts.find(p => p.type === type).value;
+    const today = `${datePart("year")}-${datePart("month")}-${datePart("day")}`;
+    // Exclude the current session conservatively: providers may return an unfinished daily bar.
+    const rows = (json.data?.usINX?.day || []).map(r => ({date:r[0], close:toNumber(r[2])}))
+      .filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && r.date < today && r.close > 0)
+      .sort((a,b) => a.date.localeCompare(b.date));
+    if (!rows.length) throw new Error("标普完整日线暂不可用");
+    return {symbol:"SPX", source:"腾讯证券标普500日线（不含当日未确认日线）", rows, generatedAt:nowIso()};
+  });
+}
+
 function sendJson(res, status, value) {
   const body = JSON.stringify(value);
   res.writeHead(status, {
@@ -950,6 +967,10 @@ function createServer() {
       const url = new URL(req.url, `http://${req.headers.host}`);
       if (url.pathname === "/api/snapshot") {
         sendJson(res, 200, await getSnapshot());
+        return;
+      }
+      if (url.pathname === "/api/sp-timing") {
+        sendJson(res, 200, await getSpTimingHistory());
         return;
       }
       if (url.pathname === "/api/health") {

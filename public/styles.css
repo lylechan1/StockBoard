@@ -846,3 +846,22 @@ th:last-child {
     grid-template-columns: 1fr;
   }
 }
+
+.timing-controls { display:flex; flex-wrap:wrap; align-items:end; gap:12px; margin:12px 0; font-size:13px; }
+.timing-controls label { display:grid; gap:6px; color:var(--muted); }
+.timing-controls input,.timing-controls button { border:1px solid var(--line); border-radius:8px; padding:9px; font:inherit; background:white; color:var(--text); }
+.timing-controls button { background:var(--blue-soft); color:var(--blue-strong); cursor:pointer; }
+.timing-note { color:var(--muted); font-size:12px; line-height:1.8; }
+.timing-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0; }
+.timing-summary > div { padding:12px; background:rgba(255,255,255,.8); border-radius:10px; }
+.timing-summary strong { display:block; margin-top:8px; font-size:22px; }
+.timing-chart { padding:12px; background:var(--panel-soft); border-radius:10px; color:var(--muted); font-size:12px; }
+.timing-chart svg { display:block; width:100%; height:180px; }
+.timing-columns { display:grid; grid-template-columns:2fr 1fr; gap:24px; margin-bottom:18px; }
+.timing-panel h3 { font-size:14px; font-weight:500; }
+.timing-table { overflow:auto; }
+.timing-panel summary { cursor:pointer; font-size:13px; color:var(--blue-strong); }
+.timing-log { padding:8px 0; font-size:12px; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
+@media(max-width:820px) { .timing-summary { grid-template-columns:repeat(2,1fr); } .timing-columns { grid-template-columns:1fr; } }
+.timing-panel > .panel-head { flex-wrap:wrap; align-items:flex-start; }
+.timing-panel > .panel-head h2 { line-height:1.5; flex:1 1 280px; }
