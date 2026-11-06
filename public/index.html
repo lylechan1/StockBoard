@@ -44,9 +44,14 @@
           <p class="timing-note">美股交易日期；25日前一交易日收盘为基准。以每日收盘相对窗口内此前最高收盘的回撤触发，首次触发后的下一交易日收盘作为实验买入价；未触发则按5日对照价兜底。休市顺延到窗口内下一交易日，越过5日则无可执行价格。默认2%仅为实验初值。</p>
           <div id="timingSummary" class="timing-summary"></div>
           <div id="timingChart" class="timing-chart" aria-live="polite">标普日线加载中</div>
-          <div class="timing-columns"><div><h3>阈值与固定日期对照</h3><div class="timing-table"><table><thead><tr><th>策略</th><th>信号 / 执行日</th><th>收盘买入价</th><th>相对5日份额差</th></tr></thead><tbody id="timingComparison"></tbody></table></div></div><div><h3>历史验证 · 占位</h3><p class="timing-note">累计样本、触发率、相对固定日胜率及平均份额差待验证。当前只展示所选窗口，不将单期结果视为预测。</p><small>需完整逐日历史、冻结的事前规则、样本外检验及费用/汇率/基金净值口径；尚未运行历史回测。</small></div></div>
-          <details><summary>实验日志与规则记录</summary><form id="timingLogForm" class="timing-controls"><label>实际执行日期 <input id="timingLogDate" type="date" required></label><label>实际买入价 / 净值 <input id="timingLogPrice" type="number" min="0.0001" step="any" required></label><label>备注 <input id="timingLogNote" maxlength="300" placeholder="如提前执行的原因"></label><button type="submit">记录执行</button><button id="timingExport" type="button">导出日志</button></form><div id="timingLogs"></div></details>
-          <small>指数实验价格不等于基金成交净值，不含费用与汇率。规则及日志仅保存在本浏览器，请定期导出。</small>
+          <div class="timing-columns"><div><h3>阈值与固定日期对照</h3><div class="timing-table"><table><thead><tr><th>策略</th><th>信号 / 执行日</th><th>收盘买入价</th><th>相对5日份额差</th></tr></thead><tbody id="timingComparison"></tbody></table></div></div><div><h3>历史验证与自动归档</h3><p class="timing-note">保存规则后，窗口结束且完整日线到齐时自动归档。自动任务仅在本浏览器打开看板时运行；关闭期间不会后台归档，重新打开后补归档仍在接口范围内的窗口。</p><small>按阈值分别统计事前实验与事后回顾。份额差均以固定5日为基准；无执行价或无5日价格的窗口仍归档，但不纳入可比统计。胜率指份额差严格大于0的比例。</small></div></div>
+          <div class="timing-table" id="timingHistorySummary"></div>
+          <h3>每期样本 · 点击月份查看已归档走势</h3>
+          <div class="timing-table"><table><thead><tr><th>窗口月份</th><th>归档状态</th><th>阈值</th><th>触发日</th><th>策略执行日</th><th>相对5日份额差</th></tr></thead><tbody id="timingArchiveRows"></tbody></table></div>
+          <h3>本期实际执行分析</h3><div id="timingActual"></div>
+          <form id="timingPairForm" hidden><label>同一基金、同一份额类别的5日对照净值 <input id="timingPairPrice" type="number" min="0.0001" step="any" required></label><button type="submit">保存对照净值</button></form>
+          <details><summary>实验日志与规则记录</summary><form id="timingLogForm" class="timing-controls"><label>实际执行日期 <input id="timingLogDate" type="date" required></label><label>实际买入价 / 净值 <input id="timingLogPrice" type="number" min="0.0001" step="any" required></label><label>同一标的5日净值（可稍后补） <input id="timingLogReference" type="number" min="0.0001" step="any"></label><label>备注 <input id="timingLogNote" maxlength="300" placeholder="如提前执行的原因"></label><button type="submit">记录执行</button><button id="timingExport" type="button">导出全部样本</button><label>导入备份 <input id="timingImport" type="file" accept="application/json,.json"></label></form><div id="timingLogs"></div></details>
+          <small>指数实验价格不等于基金成交净值，不含费用与汇率。规则、归档和日志仅保存在本浏览器，请定期导出。实际执行份额差仅适用于同一标的同一份额类别；分红、费用和汇率需自行保持口径一致。</small>
         </section>
 
         <section class="analysis-grid" aria-label="分析面板">
